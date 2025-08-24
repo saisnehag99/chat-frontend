@@ -11,15 +11,27 @@ export default function Chat() {
     async function loadAgents() {
       try {
         const data = await fetchAgents(clientsUrl);
-        setAgents(Object.entries(data));
+        const agentsArray = Object.entries(data);
+        
+        // Sort agents so that if there's an agent with the same ID as username, it appears first
+        if (user?.username) {
+          agentsArray.sort(([idA, urlA], [idB, urlB]) => {
+            if (idA === user.username) return -1; // User's agent goes first
+            if (idB === user.username) return 1;  // User's agent goes first
+            return idA.localeCompare(idB); // Alphabetical order for others
+          });
+        }
+        
+        setAgents(agentsArray);
       } catch (err) {
         console.error('Failed to load agents:', err);
       }
     }
 
     loadAgents();
-  }, []);
-
+  }, [user?.username]); // Add user.username as dependency to re-sort when user changes
+  // TODO: is the above dependency necessary? could be if add change username feature
+  
   const handleLogout = () => {
     logout();
   };

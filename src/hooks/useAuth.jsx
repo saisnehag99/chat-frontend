@@ -27,10 +27,13 @@ function useProvideAuth() {
       const payload = JSON.parse(
         atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
       );
+      const username = payload.email ? payload.email.split('@')[0] : payload.name.replace(/\s+/g, '').toLowerCase();
       const userData = {
         name: payload.name,
         email: payload.email,
         picture: payload.picture,
+        username: username,
+        displayName: `@${username}`
       };
       setUser(userData);
       setLoading(false);
