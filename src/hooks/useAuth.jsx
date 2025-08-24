@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
 
@@ -24,20 +25,23 @@ function useProvideAuth() {
     }
 
     const handleResponse = (response) => {
-      const payload = JSON.parse(
-        atob(response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
-      );
-      const username = payload.email ? payload.email.split('@')[0] : payload.name.replace(/\s+/g, '').toLowerCase();
-      const userData = {
-        name: payload.name,
-        email: payload.email,
-        picture: payload.picture,
-        username: username,
-        displayName: `@${username}`
-      };
-      setUser(userData);
-      setLoading(false);
-      localStorage.setItem('userProfile', JSON.stringify(userData)); // Save to localStorage
+      try {
+        const payload = jwtDecode(response.credential);
+        const username = payload.email ? payload.email.split('@')[0] : payload.name.replace(/\s+/g, '').toLowerCase();
+        const userData = {
+          name: payload.name,
+          email: payload.email,
+          picture: payload.picture,
+          username: username,
+          displayName: `@${username}`
+        };
+        setUser(userData);
+        setLoading(false);
+        localStorage.setItem('userProfile', JSON.stringify(userData)); // Save to localStorage
+      } catch (error) {
+        console.error('Error decoding JWT:', error);
+        setLoading(false);
+      }
     };
 
     // Load Google script dynamically
