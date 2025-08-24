@@ -29,8 +29,7 @@ export default function Login() {
               document.getElementById('google-signin-button'),
               { 
                 theme: 'outline', 
-                size: 'large',
-                callback: window.handleGoogleResponse
+                size: 'large'
               }
             );
             console.log('Google button rendered successfully');
@@ -55,8 +54,7 @@ export default function Login() {
                   document.getElementById('google-signin-button'),
                   { 
                     theme: 'outline', 
-                    size: 'large',
-                    callback: window.handleGoogleResponse
+                    size: 'large'
                   }
                 );
                 console.log('Google button rendered successfully');

@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { fetchAgents } from '../api/client.js';
 
 export default function Chat() {
   const { user, logout } = useAuth();
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'Welcome to the chat!', sender: 'System', timestamp: new Date().toLocaleTimeString() }
-  ]);
-  const [newMessage, setNewMessage] = useState('');
+  const [agents, setAgents] = useState([]);
+  const clientsUrl = 'https://chat.nanda-registry.com:6900/clients';
 
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      const message = {
-        id: Date.now(),
-        text: newMessage.trim(),
-        sender: user?.name || 'User',
-        timestamp: new Date().toLocaleTimeString()
-      };
-      setMessages([...messages, message]);
-      setNewMessage('');
+  useEffect(() => {
+    async function loadAgents() {
+      try {
+        const data = await fetchAgents(clientsUrl);
+        setAgents(Object.entries(data));
+      } catch (err) {
+        console.error('Failed to load agents:', err);
+      }
     }
-  };
+
+    loadAgents();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -28,127 +26,153 @@ export default function Chat() {
 
   return (
     <div style={{ 
-      maxWidth: '800px', 
-      margin: '0 auto', 
-      padding: '20px',
       height: '100vh',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'row'
     }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        padding: '10px 0',
-        borderBottom: '1px solid #e0e0e0',
-        marginBottom: '20px'
+      {/* Left Sidebar */}
+      <div style={{
+        width: '250px',
+        backgroundColor: '#f8f9fa',
+        borderRight: '1px solid #dee2e6',
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {user?.picture && (
+        <h2 style={{
+          margin: '0 0 20px 0',
+          fontSize: '18px',
+          fontWeight: '600',
+          color: '#333',
+          borderBottom: '2px solid #007bff',
+          paddingBottom: '10px'
+        }}>
+          NANDA Agents
+        </h2>
+        
+        {/* Agents List */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
+          {agents.length > 0 ? (
+            <ul style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0
+            }}>
+              {agents.map(([id, url]) => (
+                <li key={id} style={{
+                  padding: '12px',
+                  backgroundColor: 'white',
+                  border: '1px solid #dee2e6',
+                  borderRadius: '6px',
+                  marginBottom: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  ':hover': {
+                    backgroundColor: '#e9ecef',
+                    borderColor: '#007bff'
+                  }
+                }}>
+                  <div style={{
+                    fontWeight: '500',
+                    color: '#333',
+                    marginBottom: '4px'
+                  }}>
+                    {id}
+                  </div>
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#666',
+                    wordBreak: 'break-all'
+                  }}>
+                    {url}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              Loading agents...
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ 
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'relative'
+      }}>
+        {/* User Profile Section - Top Left */}
+        {user && (
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            zIndex: 10
+          }}>
             <img 
               src={user.picture} 
-              alt={user.name} 
-              style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '50%' 
-              }} 
+              alt={user.name}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                objectFit: 'cover'
+              }}
             />
-          )}
-          <div>
-            <h2 style={{ margin: 0 }}>Chat</h2>
-            <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
-              Welcome, {user?.name || 'User'}!
-            </p>
+            <span style={{
+              fontSize: '16px',
+              fontWeight: '500',
+              color: '#333'
+            }}>
+              {user.name}
+            </span>
           </div>
-        </div>
+        )}
+
+        {/* Logout Button */}
         <button 
           onClick={handleLogout}
           style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
             padding: '8px 16px',
             backgroundColor: '#dc3545',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            zIndex: 10
           }}
         >
           Logout
         </button>
-      </div>
 
-      {/* Messages */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto',
-        padding: '10px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '8px',
-        marginBottom: '20px'
-      }}>
-        {messages.map((message) => (
-          <div 
-            key={message.id}
-            style={{
-              marginBottom: '15px',
-              padding: '10px',
-              backgroundColor: message.sender === 'System' ? '#e3f2fd' : 'white',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0'
-            }}
-          >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: '5px'
-            }}>
-              <strong style={{ color: message.sender === 'System' ? '#1976d2' : '#333' }}>
-                {message.sender}
-              </strong>
-              <span style={{ fontSize: '12px', color: '#666' }}>
-                {message.timestamp}
-              </span>
-            </div>
-            <p style={{ margin: 0, wordBreak: 'break-word' }}>
-              {message.text}
-            </p>
-          </div>
-        ))}
+        {/* Main Chat Content */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '20px',
+          marginTop: '80px' // Add margin to account for the profile and logout buttons
+        }}>
+          <h1>Chat Page</h1>
+          <p>Welcome to chat page!</p>
+        </div>
       </div>
-
-      {/* Message Input */}
-      <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
-          style={{
-            flex: 1,
-            padding: '12px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '16px'
-          }}
-        />
-        <button 
-          type="submit"
-          disabled={!newMessage.trim()}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: newMessage.trim() ? '#007bff' : '#ccc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: newMessage.trim() ? 'pointer' : 'not-allowed',
-            fontSize: '16px'
-          }}
-        >
-          Send
-        </button>
-      </form>
     </div>
   );
 }

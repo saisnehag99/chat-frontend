@@ -12,7 +12,7 @@ export const useAuth = () => useContext(AuthContext);
 function useProvideAuth() {
   const [user, setUser] = useState(() => {
     // Load user from localStorage if available
-    const storedUser = localStorage.getItem('googleUser');
+    const storedUser = localStorage.getItem('userProfile');
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [loading, setLoading] = useState(true);
@@ -34,11 +34,8 @@ function useProvideAuth() {
       };
       setUser(userData);
       setLoading(false);
-      localStorage.setItem('googleUser', JSON.stringify(userData)); // Save to localStorage
+      localStorage.setItem('userProfile', JSON.stringify(userData)); // Save to localStorage
     };
-
-    // Store the callback globally so Login component can access it
-    window.handleGoogleResponse = handleResponse;
 
     // Load Google script dynamically
     const script = document.createElement('script');
@@ -75,13 +72,12 @@ function useProvideAuth() {
     return () => {
       document.body.removeChild(script);
       clearTimeout(timeout);
-      delete window.handleGoogleResponse;
     };
   }, []);
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('googleUser'); // Remove from localStorage
+    localStorage.removeItem('userProfile'); // Remove from localStorage
     if (window.google) google.accounts.id.disableAutoSelect();
   };
 
