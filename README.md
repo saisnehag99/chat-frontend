@@ -1,54 +1,34 @@
-# AI Chat Assistant
+# Chat frontend
 
-A modern, minimalistic chatbot interface with Google OAuth authentication.
+This repository is a React + Vite implementation of the Project Nanda chat frontend. The original [implementation](https://github.com/projnanda/chat-frontend) was written in HTML/CSS/JS.
 
-## Features
+As of February 14, 2025 [Create React App was deprecated]( https://react.dev/blog/2025/02/14/sunsetting-create-react-app) for React. Therefore, we chose to use React + Vite instead.
 
-- Sleek, Apple-inspired dark mode UI
-- Google OAuth authentication
-- Multiple AI agents for different tasks
-- Responsive design for desktop and mobile
-- Modern animations and transitions
-
-## Setup Instructions
-
-### 1. Configure Google OAuth
-
-Follow these steps to set up Google OAuth for authentication:
-
-1. See the detailed instructions in [oauth-setup-guide.md](oauth-setup-guide.md)
-2. Create a project in the [Google API Console](https://console.cloud.google.com/)
-3. Set up OAuth credentials for a web application
-4. Add `http://localhost:8000` to authorized JavaScript origins
-
-### 2. Configure Application
-
-1. Copy `config.sample.js` to `config.js`
-2. Update `config.js` with your Google OAuth client ID:
-
-```js
-const config = {
-    googleClientId: "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
-};
+## Create a Vite project
+```bash
+npm create vite@latest <your_project_name> -- --template react
+cd <your_project_name>
 ```
 
-### 3. Running the Application
+## Run a Vite project
+```bash
+npm install
+npm run dev
+```
 
-1. Start a local web server in the project directory:
-   ```
-   python -m http.server
-   ```
-   
-2. Open your browser and navigate to:
-   - Landing page: http://localhost:8000/landing.html
-   - Chat interface (requires authentication): http://localhost:8000/index.html
+This will launch your Vite React application in development mode, accessible at http://localhost:5173.
 
-## Security Notes
+## Google authentication setup
+1. Add http://localhost:5173 to Authorized JavaScript Origins
+2. Add http://localhost:5173 to Authorized redirect URIs
+3. Install required packages
 
-- The `config.js` file contains sensitive credentials and is excluded from git version control
-- In a production environment, you should implement server-side validation of authentication tokens
-- For a real application, consider adding backend APIs and proper security measures
+```bash
+npm install @react-oauth/google jwt-decode
+```
 
-## License
+3. Create a .env file in your project root
 
-Feel free to use and modify this code for personal or commercial projects. 
+```bash
+VITE_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+```

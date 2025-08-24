@@ -1,0 +1,4 @@
+AuthProvider (wraps entire app)
+├── App.jsx
+│   ├── Login.jsx (can use useAuth())
+│   └── Chat.jsx (can use useAuth())
