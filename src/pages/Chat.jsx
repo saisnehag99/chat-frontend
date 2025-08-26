@@ -76,15 +76,6 @@ export default function Chat() {
       
       setNewMessage('');
       
-      // TODO: Send message to selected agent via API
-      // For now, just simulate a response
-      // setTimeout(() => {
-      // const response = {
-      //   id: Date.now() + 1,
-      //   text: `This is a simulated response from ${agentId}. Your message: "${newMessage}"`,
-      //   sender: 'agent',
-      //   timestamp: new Date().toLocaleTimeString()
-      // };
 
       setTimeout(async () => { 
         try {

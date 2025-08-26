@@ -16,71 +16,29 @@ function useProvideAuth() {
     const storedUser = localStorage.getItem('userProfile');
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // If user is already loaded from localStorage, set loading to false
-    if (user) {
-      setLoading(false);
+  const login = (credentialResponse) => {
+    try {
+      const payload = jwtDecode(credentialResponse.credential);
+      const username = payload.email
+        ? payload.email.split('@')[0]
+        : payload.name.replace(/\s+/g, '').toLowerCase();
+
+      const userData = {
+        name: payload.name,
+        email: payload.email,
+        picture: payload.picture,
+        username,
+        displayName: `@${username}`,
+      };
+
+      setUser(userData);
+      localStorage.setItem('userProfile', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
     }
-
-    const handleResponse = (response) => {
-      try {
-        const payload = jwtDecode(response.credential);
-        const username = payload.email ? payload.email.split('@')[0] : payload.name.replace(/\s+/g, '').toLowerCase();
-        const userData = {
-          name: payload.name,
-          email: payload.email,
-          picture: payload.picture,
-          username: username,
-          displayName: `@${username}`
-        };
-        setUser(userData);
-        setLoading(false);
-        localStorage.setItem('userProfile', JSON.stringify(userData)); // Save to localStorage
-      } catch (error) {
-        console.error('Error decoding JWT:', error);
-        setLoading(false);
-      }
-    };
-
-    // Load Google script dynamically
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      console.log('Google script loaded successfully');
-      console.log('Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
-      
-      try {
-        google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleResponse,
-        });
-        console.log('Google accounts initialized successfully');
-        setLoading(false);
-      } catch (error) {
-        console.error('Error initializing Google accounts:', error);
-        setLoading(false);
-      }
-    };
-    script.onerror = (error) => {
-      console.error('Error loading Google script:', error);
-      setLoading(false);
-    };
-    document.body.appendChild(script);
-
-    // Set a timeout to ensure loading state is handled even if Google script fails
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 3000);
-
-    return () => {
-      document.body.removeChild(script);
-      clearTimeout(timeout);
-    };
-  }, []);
+  };
 
   const logout = () => {
     setUser(null);
@@ -88,7 +46,7 @@ function useProvideAuth() {
     if (window.google) google.accounts.id.disableAutoSelect();
   };
 
-  return { user, logout, loading };
+  return { user, login, logout, loading };
 }
 
 export default useProvideAuth;
