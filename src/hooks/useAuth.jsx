@@ -21,6 +21,9 @@ function useProvideAuth() {
   const login = (credentialResponse) => {
     try {
       const payload = jwtDecode(credentialResponse.credential);
+      console.log('payload', payload)
+
+      // Store the user profile data from the backend
       const username = payload.email
         ? payload.email.split('@')[0]
         : payload.name.replace(/\s+/g, '').toLowerCase();
@@ -32,9 +35,25 @@ function useProvideAuth() {
         username,
         displayName: `@${username}`,
       };
-
       setUser(userData);
       localStorage.setItem('userProfile', JSON.stringify(userData));
+
+      // Ensure we have a client ID for allocation
+      if (!localStorage.getItem('client_id')) {
+        localStorage.setItem('client_id', 'client-' + Date.now());
+      }
+
+      // Store the user data from the backend
+      localStorage.setItem('user', JSON.stringify(payload))
+
+      // IMPORTANT: Store the api_url to prevent the app from calling /api/allocate again
+      if (data.api_url) {
+        localStorage.setItem('server_url', payload.api_url);
+        console.log("✅ Stored existing user's api_url:", payload.api_url);
+    } else {
+        console.warn("⚠️ No api_url returned for existing user, app will need to call /api/allocate");
+    }
+
     } catch (error) {
       console.error('Error decoding JWT:', error);
     }

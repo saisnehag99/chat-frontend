@@ -25,17 +25,27 @@ export default function Chat() {
   useEffect(() => {
     async function loadAgents() {
       try {
-        const data = await fetchAgents(clientsUrl);
+
+	// Populate with fetched agents from the registry (excluding user's own agent)
+	const data = await fetchAgents(clientsUrl);
         const agentsArray = Object.entries(data);
         
-        // Sort agents so that if there's an agent with the same ID as username, it appears first
-        if (user?.username) {
-          agentsArray.sort(([idA, urlA], [idB, urlB]) => {
-            if (idA === user.username) return -1; // User's agent goes first
-            if (idB === user.username) return 1;  // User's agent goes first
+	// Add personal sandbox agent (only for the logged-in user)
+	agentsArray.push([`${user.name} - Sandbox`, 'alive'])
+	const sandboxName = `${user.name} - Sandbox`;
+        console.log(`Creating personal sandbox agent: ${sandboxName}`);
+	
+	// Remove the array entry that has a username associated with the sandbox agent
+	const keyToRemove = user.username;
+	delete agentsArray.keyToRemove
+	console.log(`Filtering out agent "${keyToRemove}" for current user "${user.name}" - they see their sandbox instead`);
+
+        // Sort agents so that the sandbox agent appears first
+        agentsArray.sort(([idA, urlA], [idB, urlB]) => {
+            if (idA === sandboxName) return -1; // User's agent goes first
+            if (idB === sandboxName) return 1;  // User's agent goes first
             return idA.localeCompare(idB); // Alphabetical order for others
           });
-        }
         
         setAgents(agentsArray);
         
