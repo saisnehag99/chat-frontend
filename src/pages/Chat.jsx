@@ -179,6 +179,16 @@ export default function Chat() {
           Logout
         </button>
 
+        {/* Reset Button */}
+        {/* <button 
+          onClick={() => {
+            setChatMessages({});
+          }}
+          className="reset-button"
+        >
+          Reset
+        </button> */}
+
         {/* Chat Window */}
         <div className="chat-window">
           {/* Background Pattern */}
