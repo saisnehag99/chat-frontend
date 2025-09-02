@@ -14,6 +14,7 @@ export default function Chat() {
   const clientsUrl = 'https://chat.nanda-registry.com:6900/clients';
   let assignedServerUrl = null;
   let serverUrl = null;
+  let pollingIntervalId = null;
 
   // Save chat messages to localStorage
   useEffect(() => {
@@ -60,6 +61,103 @@ export default function Chat() {
     loadAgents();
   }, [user?.username]); // Add user.username as dependency to re-sort when user changes
   // TODO: is the above dependency necessary? could be if add change username feature
+
+  const pollForMessages = async () => {
+
+    // Use the new /api/render endpoint
+    const pollUrl = `${assignedServerUrl}/api/render`;
+    console.log("Polling for messages at:", pollUrl);
+
+    try {
+        const response = await fetch(pollUrl);
+        if (!response.ok) {
+            // Don't spam errors for expected empty polls or temporary issues
+            if (response.status !== 404 && response.status !== 204) { 
+                 console.error(`Polling failed: ${response.status} ${response.statusText}`);
+            }
+            return; 
+        }
+
+        // Assuming /api/render returns a single message object or null/empty if none
+        const message = await response.json();
+
+        // Accept both `message` (old) and `message_content` (new) keys
+        const textField = message ? (message.message || message.message_content) : null;
+
+        if (textField) {
+            console.log(`Received message via polling:`, message);
+            let messageText = textField;
+                
+            // Check if this is a system notification message that we should filter out
+            const isSystemNotification = messageText.includes('[AGENT') && messageText.includes('Message sent to');
+                
+            // Skip system notification messages completely
+            if (isSystemNotification) {
+                console.log("Filtering out system notification:", messageText);
+                return;
+            }
+                
+            // Determine sender for potential future use
+            const senderName = message.sender_name || message.from_agent || message.sender_client_id || 'Agent';
+                
+            // Check if this message is being relayed from one agent to another
+            const isRelayedMessage = messageText.includes('FROM ') || messageText.toLowerCase().includes('from agent');
+                
+            // Clean up relayed messages for better display
+            if (isRelayedMessage) {
+                    // Clean up any "FROM agent:" prefixes
+                    messageText = messageText.replace(/FROM\s+agent\d+\s*:\s*/i, '');
+                    messageText = messageText.replace(/FROM\s+\w+\s*:\s*/i, '');
+                    console.log("Cleaned up relayed message:", messageText);
+            }
+        
+            // For message routing, we use these rules:
+            // 1. If it's a direct message from a human user to me (my client), show in that user's chat
+            // 2. If it's a message from an agent with a different sender_name, show in sender_name's chat
+            // 3. If it's a response from an agent to my @mention, show in that agent's chat window
+            // 4. If it's a message from an agent without sender_name, show in that agent's chat
+                
+            // Note: in the JSON payload:
+            // - from_agent is the agent who sent the message
+            // - sender_name is the original human who triggered the conversation
+            
+            // Message should appear in the sender's chat window, not in the from_agent's window
+            let chatWindowAgentId;
+
+            // Case 1 & 2: Message has sender_name - show in that person's chat window
+            if (message.sender_name && message.sender_name !== "Anonymous") {
+                chatWindowAgentId = message.sender_name;
+                console.log(`Message originally from ${message.sender_name}, will display in their chat window`);
+            }
+            // Case 3: No sender_name but has from_agent - this could be a response to our @mention
+            else if (message.from_agent) {
+                // If this is likely a response to our @mention (we are the current user), 
+                // show it in the agent's chat window so the conversation flows properly
+                chatWindowAgentId = message.from_agent;
+                console.log(`Message is from ${chatWindowAgentId}, will display in the agent's chat window`);
+            }
+            // If backend only sends sender_client_id use that
+            else if (message.sender_client_id) {
+                chatWindowAgentId = message.sender_client_id;
+            }
+            // Fallback: Default to current agent if we can't determine
+            else {
+                chatWindowAgentId = currentAgent.id;
+                console.log(`Cannot determine appropriate window, defaulting to current agent: ${chatWindowAgentId}`);
+            }
+
+            // Update sender chat history with new message
+            setChatMessages(prev => ({
+                ...prev,
+                [selectedAgent[0]]: [...(prev[selectedAgent[0]] || []), message]
+              }));
+
+        } else {
+        }
+    } catch (error) {
+        console.error("Error during polling fetch:", error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -168,11 +266,18 @@ export default function Chat() {
                 timestamp: new Date().toLocaleTimeString()
             };
 
+            if (response.response.includes('Message sent to')) {
+             } else {
             // Save the updated chat to the current agent's history
             setChatMessages(prev => ({
                 ...prev,
                 [selectedAgent[0]]: [...(prev[selectedAgent[0]] || []), normalizedAgentMessage]
-              }));
+            }));
+            }
+            
+            // Poll for messages
+            pollForMessages();
+
           } else {
               throw new Error('Invalid response format');
           }

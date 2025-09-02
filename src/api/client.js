@@ -28,12 +28,12 @@ export async function fetchAgents(registryListUrl) {
 }
 
 /**
-     * Send a message to the specified agent endpoint URL
-     * @param {string} targetUrl - The full URL of the API endpoint (e.g., `${server_url}/api/send`)
-     * @param {string} message - The message text to send
-     * @param {string} agentId - Optional target agent ID (used for @mention format)
-     * @returns {Promise<object>} - The response from the agent
-     */
+ * Send a message to the specified agent endpoint URL
+ * @param {string} targetUrl - The full URL of the API endpoint (e.g., `${server_url}/api/send`)
+ * @param {string} message - The message text to send
+ * @param {string} agentId - Optional target agent ID (used for @mention format)
+ * @returns {Promise<object>} - The response from the agent
+ */
 export async function sendMessage(targetUrl, message, agentId) {
     try {
 
@@ -112,8 +112,8 @@ export async function sendMessage(targetUrl, message, agentId) {
             // Let's check if we get any additional polling data in the next few seconds that might contain the actual response
             console.log('Will poll for actual response from target agent');
         }
-        
         return data;
+
     } catch (error) {
         console.error('Error sending message:', error);
         throw error;
