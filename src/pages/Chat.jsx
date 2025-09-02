@@ -25,35 +25,33 @@ export default function Chat() {
     async function loadAgents() {
       try {
 
-      // Populate with fetched agents from the registry (excluding user's own agent)
-      const data = await fetchAgents(clientsUrl);
-      const agentsArrayOld = Object.entries(data);
-      
-      // Get current user name
-      const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
-      console.log('current username is:', currentUserName)
-      console.log(`Creating personal sandbox agent: ${currentUserName} - Sandbox`);
-      
-      // Add personal sandbox agent (only for the logged-in user)
-      agentsArrayOld.push([`${currentUserName} - Sandbox`, 'alive']);
-      
-      // Remove the array entry that has a username associated with the sandbox agent
-      const agentsArray = agentsArrayOld.filter(item => item[0] !== currentUserName);
-      console.log(`Filtering out agent "${currentUserName}" for current user "${currentUserName}" - they see their sandbox instead`);
-      
-      // Sort agents so that the sandbox agent appears first
-      agentsArray.sort(([idA, urlA], [idB, urlB]) => {
-          if (idA === `${currentUserName} - Sandbox`) return -1; // User's agent goes first
-          if (idB === `${currentUserName} - Sandbox`) return 1;  // User's agent goes first
-          return idA.localeCompare(idB); // Alphabetical order for others
-          });
-
-      setAgents(agentsArray);
+        // Populate with fetched agents from the registry (excluding user's own agent)
+        const data = await fetchAgents(clientsUrl);
+        const agentsArray = Object.entries(data);
+              
+        // Add personal sandbox agent (only for the logged-in user)
+        agentsArray.push([`${user.name} - Sandbox`, 'alive'])
+        const sandboxName = `${user.name} - Sandbox`;
+        console.log(`Creating personal sandbox agent: ${sandboxName}`);
         
-      // Set the first agent as default selection
-      if (agentsArray.length > 0 && !selectedAgent) {
-        setSelectedAgent(agentsArray[0]);
-      }
+        // Remove the array entry that has a username associated with the sandbox agent
+        const keyToRemove = user.username;
+        delete agentsArray.keyToRemove
+        console.log(`Filtering out agent "${keyToRemove}" for current user "${user.name}" - they see their sandbox instead`);
+
+        // Sort agents so that the sandbox agent appears first
+        agentsArray.sort(([idA, urlA], [idB, urlB]) => {
+            if (idA === sandboxName) return -1; // User's agent goes first
+            if (idB === sandboxName) return 1;  // User's agent goes first
+            return idA.localeCompare(idB); // Alphabetical order for others
+          });
+        
+        setAgents(agentsArray);
+        
+        // Set the first agent as default selection
+        if (agentsArray.length > 0 && !selectedAgent) {
+          setSelectedAgent(agentsArray[0]);
+        }
       } catch (err) {
         console.error('Failed to load agents:', err);
       }
@@ -75,25 +73,6 @@ export default function Chat() {
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedAgent) return;
 
-<<<<<<< HEAD
-      // Check if this is a message to another agent (starts with @), if it is then target that agent id
-      const isMentionMessage = newMessage.startsWith('@');
-      const isSandboxAgent = agentId.toLowerCase().includes('sandbox');
-      let targetAgentId = '';
-
-      if (isMentionMessage) {
-	      console.log('checking for mention message')
-        // Extract the mentioned agent name from the message
-        const mentionMatch = newMessage.match(/^@(\w+)/);
-        if (mentionMatch && mentionMatch[1]) {
-	          targetAgentId = mentionMatch[1];
-        }
-      } else if (isSandboxAgent) {
-        targetAgentId = agentId.slice(0, - '- Sandbox'.length);
-      } else {
-        targetAgentId = agentId;
-      }  
-=======
     const agentId = selectedAgent[0] === `${user.name} - Sandbox`
       ? user.username
       : selectedAgent[0]; 
@@ -116,7 +95,6 @@ export default function Chat() {
     const isMentionMessage = newMessage.startsWith('@');
     let mentionedAgent = '';
     let targetAgentId = '';
->>>>>>> 1cba5d530db6e02c8c6620713d12c955de6520f0
 
     if (isMentionMessage) {
       // Extract the mentioned agent name from the message
@@ -135,51 +113,12 @@ export default function Chat() {
       const lookupUrl = `${apiBaseUrl}/lookup/${targetAgentId}`;
       console.log("Looking up user's assigned agent from:", lookupUrl);
 
-<<<<<<< HEAD
-          if (health.status === 'ok') {
-            console.log('Health check passed.')
-            localStorage.setItem('server_url', serverUrl);
-            console.log("Found and stored user's assigned server_url:", serverUrl);
-            
-            try {
-              // const assignedServerUrl = "https://nandaisrad.com:6001"
-              const targetUrl = `${assignedServerUrl}/api/send`;
-              const senderAgentId = (isMentionMessage) ? null : agentId;
-	            const response = await sendMessage(targetUrl, newMessage, senderAgentId);
-              // const response = await sendMessage(targetUrl, newMessage, agentId);
-              console.log('sending message')
-              
-              // Check the response
-              if (response && response.response) {
-                // Normalize API response into our message shape
-                const agentText = typeof response.response === 'string' ? response.response : JSON.stringify(response.response);
-                const normalizedAgentMessage = {
-                    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-                    text: agentText,
-                    sender: 'user',
-                    timestamp: new Date().toLocaleTimeString()
-                };
-  
-                // Save the updated chat to the current agent's history
-                setChatMessages(prev => ({
-                    ...prev,
-                    [agentId]: [...(prev[agentId] || []), normalizedAgentMessage]
-                  }));
-                } else {
-                    throw new Error('Invalid response format');
-                }
-                console.log('Response:', response);
-                } catch (error) {
-                console.error('Error sending message:', error);
-                }
-=======
       const response = await fetch(lookupUrl, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
         }
       });
->>>>>>> 1cba5d530db6e02c8c6620713d12c955de6520f0
 
       if (response.ok) {
           const data = await response.json();
