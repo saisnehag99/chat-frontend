@@ -32,7 +32,7 @@ function useProvideAuth() {
         name: payload.name,
         email: payload.email,
         picture: payload.picture,
-        username,
+        username: username,
         displayName: `@${username}`,
       };
       setUser(userData);

@@ -36,8 +36,22 @@ export async function fetchAgents(registryListUrl) {
      */
 export async function sendMessage(targetUrl, message, agentId) {
     try {
-        console.log(`Sending message to ${targetUrl}:`, message);
-        console.log(`Raw message: "${message}", agentId: ${agentId}`);
+
+        // Format the message appropriately
+        let formattedMessage;
+
+        // Don't modify messages that already have @mentions
+        const hasExistingMention = message.startsWith('@');
+        
+        if (hasExistingMention) {
+            // For regular messages to other agents, apply @mentions if needed
+            formattedMessage = hasExistingMention ? message : (agentId ? `@${agentId} ${message}` : message);
+        } else {
+            formattedMessage = message;
+        }
+
+        console.log(`Sending formatted message to ${targetUrl}:`, formattedMessage);
+        console.log(`Raw message: "${message}", agentId: ${agentId}, hasExistingMention: ${hasExistingMention}`);
         
         // Get the user's name from localStorage
         let senderName = "Anonymous";
@@ -62,7 +76,7 @@ export async function sendMessage(targetUrl, message, agentId) {
         }
         
         const requestPayload = {
-            message: message,
+            message: formattedMessage,
             conversation_id: null,
             sender_name: senderName  // Include the sender's name in the request
         };
