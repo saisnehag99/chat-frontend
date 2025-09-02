@@ -37,10 +37,6 @@ export default function Chat() {
       // Add personal sandbox agent (only for the logged-in user)
       agentsArrayOld.push([`${currentUserName} - Sandbox`, 'alive']);
       
-      // Populate with fetched agents from the registry (excluding user's own agent)
-      const data = await fetchAgents(clientsUrl);
-      const agentsArray = Object.entries(data);
-
       // Remove the array entry that has a username associated with the sandbox agent
       const agentsArray = agentsArrayOld.filter(item => item[0] !== currentUserName);
       console.log(`Filtering out agent "${currentUserName}" for current user "${currentUserName}" - they see their sandbox instead`);
