@@ -27,18 +27,18 @@ export default function Chat() {
 
         // Populate with fetched agents from the registry (excluding user's own agent)
         const data = await fetchAgents(clientsUrl);
-        const agentsArray = Object.entries(data);
+        const agentsArrayOld = Object.entries(data);
               
         // Add personal sandbox agent (only for the logged-in user)
-        agentsArray.push([`${user.name} - Sandbox`, 'alive'])
-        const sandboxName = `${user.name} - Sandbox`;
+        const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
+        agentsArrayOld.push([`${currentUserName} - Sandbox`, 'alive'])
+        const sandboxName = `${currentUserName} - Sandbox`;
         console.log(`Creating personal sandbox agent: ${sandboxName}`);
         
         // Remove the array entry that has a username associated with the sandbox agent
-        const keyToRemove = user.username;
-        delete agentsArray.keyToRemove
-        console.log(`Filtering out agent "${keyToRemove}" for current user "${user.name}" - they see their sandbox instead`);
-
+        const agentsArray = agentsArrayOld.filter(item => item[0] !== currentUserName);
+        console.log(`Filtering out agent "${currentUserName}" for current user "${currentUserName}" - they see their sandbox instead`);
+      
         // Sort agents so that the sandbox agent appears first
         agentsArray.sort(([idA, urlA], [idB, urlB]) => {
             if (idA === sandboxName) return -1; // User's agent goes first
