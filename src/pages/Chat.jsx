@@ -14,7 +14,6 @@ export default function Chat() {
   const clientsUrl = 'https://chat.nanda-registry.com:6900/clients';
   let assignedServerUrl = null;
   let serverUrl = null;
-  let pollingIntervalId = null;
 
   // Save chat messages to localStorage
   useEffect(() => {
@@ -31,7 +30,7 @@ export default function Chat() {
         const agentsArrayOld = Object.entries(data);
               
         // Add personal sandbox agent (only for the logged-in user)
-        const currentUserName = user ? user.name : '';
+        const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
         agentsArrayOld.push([`${currentUserName} - Sandbox`, 'alive'])
         const sandboxName = `${currentUserName} - Sandbox`;
         console.log(`Creating personal sandbox agent: ${sandboxName}`);
@@ -275,7 +274,7 @@ export default function Chat() {
         try {
           // const assignedServerUrl = "https://nandaisrad.com:6001"
           const targetUrl = `${assignedServerUrl}/api/send`;
-          const response = await sendMessage(targetUrl, newMessage, targetAgentId);
+          const response = await sendMessage(targetUrl, newMessage, targetAgentIdNew);
           console.log('Sent message')
           
           // Check the response
