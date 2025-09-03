@@ -31,7 +31,7 @@ export default function Chat() {
         const agentsArrayOld = Object.entries(data);
               
         // Add personal sandbox agent (only for the logged-in user)
-        const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
+        const currentUserName = user ? user.name : '';
         agentsArrayOld.push([`${currentUserName} - Sandbox`, 'alive'])
         const sandboxName = `${currentUserName} - Sandbox`;
         console.log(`Creating personal sandbox agent: ${sandboxName}`);
@@ -63,7 +63,6 @@ export default function Chat() {
   // TODO: is the above dependency necessary? could be if add change username feature
 
   const pollForMessages = async () => {
-
     // Use the new /api/render endpoint
     const pollUrl = `${assignedServerUrl}/api/render`;
     console.log("Polling for messages at:", pollUrl);
@@ -173,7 +172,7 @@ export default function Chat() {
 
     const agentId = selectedAgent[0] === `${user.name} - Sandbox`
       ? user.username
-      : selectedAgent[0]; 
+      : selectedAgent[0];
     const message = {
       id: Date.now(),
       text: newMessage,
@@ -386,6 +385,16 @@ export default function Chat() {
         >
           Logout
         </button>
+
+        {/* Reset Button */}
+        {/* <button 
+          onClick={() => {
+            setChatMessages({});
+          }}
+          className="reset-button"
+        >
+          Reset
+        </button> */}
 
         {/* Chat Window */}
         <div className="chat-window">
