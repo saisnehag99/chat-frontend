@@ -180,6 +180,26 @@ export default function Chat() {
       sender: 'user',
       timestamp: new Date().toLocaleTimeString()
     };
+
+    // Set assigned server url
+    const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
+    const apiBaseUrl = "https://chat.nanda-registry.com:6900";
+    const lookupUrl = `${apiBaseUrl}/lookup/${currentUserName}`;
+    const response = await fetch(lookupUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    if (response.ok) {
+        const data = await response.json();
+        if (data.api_url) {
+            assignedServerUrl = data.api_url;
+            console.log("Found the user's assigned server_url:", assignedServerUrl);
+        } else {
+            console.warn("Lookup response missing api_url, falling back to allocation");
+        }
+      }
     
     // Add message to the specific agent's chat
     setChatMessages(prev => ({
@@ -193,6 +213,8 @@ export default function Chat() {
     const isMentionMessage = newMessage.startsWith('@');
     let mentionedAgent = '';
     let targetAgentId = '';
+    let targetAgentIdNew = '';
+
 
     if (isMentionMessage) {
       // Extract the mentioned agent name from the message
@@ -205,10 +227,13 @@ export default function Chat() {
       targetAgentId = agentId;
     }  
 
+    targetAgentIdNew = targetAgentId.replace(" - Sandbox", "");
+    console.log('targetAgentId: ',targetAgentIdNew)
+
     try {
       // First try to lookup the user's assigned agent using the /lookup endpoint and get the api_url
       const apiBaseUrl = "https://chat.nanda-registry.com:6900";
-      const lookupUrl = `${apiBaseUrl}/lookup/${targetAgentId}`;
+      const lookupUrl = `${apiBaseUrl}/lookup/${targetAgentIdNew}`;
       console.log("Looking up user's assigned agent from:", lookupUrl);
 
       const response = await fetch(lookupUrl, {
@@ -222,8 +247,7 @@ export default function Chat() {
           const data = await response.json();
           if (data.api_url) {
               serverUrl = data.api_url;
-              assignedServerUrl = serverUrl;
-              console.log("Found the user's assigned server_url:", serverUrl);
+              console.log("Found the target's assigned server_url:", serverUrl);
           } else {
               console.warn("Lookup response missing api_url, falling back to allocation");
           }
@@ -232,7 +256,7 @@ export default function Chat() {
       }
     } catch (error) {
         console.error("Error fetching/assigning server URL:", error);
-        assignedServerUrl = null;
+        serverUrl = null;
         return null;
     }
 
@@ -241,18 +265,18 @@ export default function Chat() {
 
     try {
       // check the health of the agent
-      const healthCheckUrl = `${assignedServerUrl}/api/health`;
+      const healthCheckUrl = `${serverUrl}/api/health`;
       const health = await checkHealth(healthCheckUrl);
 
       if (health.status === 'ok') {
         console.log('Health check passed.')
-        localStorage.setItem('server_url', serverUrl);
-        console.log("Found and stored user's assigned server_url:", serverUrl);
+        //localStorage.setItem('server_url', serverUrl);
+        //console.log("Found and stored user's assigned server_url:", serverUrl);
         
         try {
           // const assignedServerUrl = "https://nandaisrad.com:6001"
           const targetUrl = `${assignedServerUrl}/api/send`;
-          const response = await sendMessage(targetUrl, newMessage, agentId);
+          const response = await sendMessage(targetUrl, newMessage, targetAgentId);
           console.log('Sent message')
           
           // Check the response
