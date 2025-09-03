@@ -24,12 +24,12 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="" element={<Login />} />
         <Route 
           path="/chat" 
-          element={user ? <Chat /> : <Navigate to="/login" />} 
+          element={user ? <Chat /> : <Navigate to="" />} 
         />
-        <Route path="*" element={<Navigate to={user ? "/chat" : "/login"} />} />
+        <Route path="*" element={<Navigate to={user ? "/chat" : ""} />} />
       </Routes>
     </Router>
   );
