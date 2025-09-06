@@ -108,6 +108,9 @@ export default function Chat() {
     // Don't clear messages - they're now stored per agent
   };
 
+  
+
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedAgent) return;
 
@@ -220,10 +223,83 @@ export default function Chat() {
           if (response && response.response) {
             // Normalize API response into our message shape
             let agentText = typeof response.response === 'string' ? response.response : JSON.stringify(response.response);
-            
+
             // Update the text based on message type
-            agentText = updateMessage(agentText, false, currentUserName)
+            let isUser=false;
+            let senderName = currentUserName;
+            // Filter out system notification messages
+            if (!isUser && agentText) {
+                // Skip system notification messages
+                if (agentText.includes('[AGENT') && agentText.includes('Message sent to')) {
+                    console.log("UI filtered out system message:", agentText);
+                    return;
+                }
+            }
+    
+            // Check if this is an agent-enhanced message (contains @mention and agent info)
+            // Check the message content regardless of isUser value since app.js may pass isUser=true for enhanced messages
+            const isAgentEnhanced = agentText.includes('[AGENT');
             
+            // Extract original message and agent enhancement if it's an agent-enhanced message
+            let agentEnhancement = '';
+            let targetUser = '';
+            let isActuallyUserMessage = isUser; // Track the corrected user status
+            
+            if (isAgentEnhanced) {
+                console.log(`🔍 Detected potential agent-enhanced message: "${agentText}"`);
+                
+                // Parse the actual message format we're seeing:
+                // "@mihirsheth9999: [AGENT agentm33 Sending]: Dear Mihir, I hope you're well. Best regards"
+                // Fixed regex to handle additional text after agent ID (like "Sending") and multiline content
+                let agentMatch = agentText.match(/^@(\w+):\s*\[AGENT\s+([^\]]+)\]:\s*([\s\S]+)$/);
+                let agentId = null;
+                
+                if (agentMatch) {
+                    // Format: @user: [AGENT agentId ...]: message
+                    targetUser = agentMatch[1];
+                    agentId = agentMatch[2].split(/\s+/)[0]; // Get just the agent ID, ignore additional text
+                    agentEnhancement = agentMatch[3];
+                    console.log(`📝 Enhanced message detected - Target: ${targetUser}, Agent: ${agentId}, Message: "${agentEnhancement}"`);
+                } else {
+                    // Fallback: try simpler pattern [AGENT id]: message (with multiline support)
+                    agentMatch = agentText.match(/^\[AGENT\s+([^\]]+)\]:\s*([\s\S]+)$/);
+                    if (agentMatch) {
+                        agentId = agentMatch[1].split(/\s+/)[0]; // Get just the agent ID, ignore additional text
+                        agentEnhancement = agentMatch[2];
+                        console.log(`📝 Simple enhanced message detected - Agent: ${agentId}, Message: "${agentEnhancement}"`);
+                    }
+                }
+        
+                console.log(`🔬 Debug values: agentMatch=${!!agentMatch}, agentId="${agentId}", agentEnhancement="${agentEnhancement}"`);
+            
+                if (agentMatch && agentId) {
+                    // For agent-enhanced messages, we should ALWAYS treat them as user messages
+                    // because they represent the user's original message that was enhanced by their agent
+                    isActuallyUserMessage = true;
+                    console.log(`✅ Agent-enhanced message will be treated as USER message (right side)`);
+                    console.log(`🎯 Enhanced content: "${agentEnhancement}"`);
+                    console.log(`📤 Target user: "${targetUser}"`);
+                    agentText= agentText.replace(agentMatch[1], '').replace('[AGENT ]:','')
+                    agentText = 'AI Enhanced: '+agentText
+                } else {
+                    console.log(`❌ Agent match failed - treating as regular message`);
+                    agentText = '@'+senderName + ': '+agentText
+                }
+            }
+    
+            // Clean up agent prefix patterns for regular messages
+            if (!isActuallyUserMessage && !isAgentEnhanced && agentText) {
+                const agentPrefixPattern = /^agent\d+:\s+FROM\s+agent\d+:/;
+                if (agentPrefixPattern.test(agentText)) {
+                  agentText = agentText.replace(agentPrefixPattern, '');
+                }
+                
+                if (agentText.includes('FROM ') || agentText.toLowerCase().includes('from agent')) {
+                    agentText = agentText.replace(/FROM\s+agent\d+\s*:\s*/i, '');
+                    agentText = agentText.replace(/FROM\s+\w+\s*:\s*/i, '');
+                }
+              }
+
             // Normalize the message
             const normalizedAgentMessage = {
                 id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
