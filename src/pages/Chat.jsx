@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import { fetchAgents, sendMessage, checkHealth } from '../api/client.js';
-import { updateMessage } from '../api/ui-manager.js';
 
 export default function Chat() {
   const { user, logout } = useAuth();
