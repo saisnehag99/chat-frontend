@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import { fetchAgents, sendMessage, checkHealth } from '../api/client.js';
+import { updateMessage } from '../api/ui-manager.js';
 
 export default function Chat() {
   const { user, logout } = useAuth();
@@ -84,66 +85,7 @@ export default function Chat() {
 
         if (textField) {
             console.log(`Received message via polling:`, message);
-            let messageText = textField;
-                
-            // Check if this is a system notification message that we should filter out
-            const isSystemNotification = messageText.includes('[AGENT') && messageText.includes('Message sent to');
-                
-            // Skip system notification messages completely
-            if (isSystemNotification) {
-                console.log("Filtering out system notification:", messageText);
-                return;
-            }
-                
-            // Determine sender for potential future use
-            const senderName = message.sender_name || message.from_agent || message.sender_client_id || 'Agent';
-                
-            // Check if this message is being relayed from one agent to another
-            const isRelayedMessage = messageText.includes('FROM ') || messageText.toLowerCase().includes('from agent');
-                
-            // Clean up relayed messages for better display
-            if (isRelayedMessage) {
-                    // Clean up any "FROM agent:" prefixes
-                    messageText = messageText.replace(/FROM\s+agent\d+\s*:\s*/i, '');
-                    messageText = messageText.replace(/FROM\s+\w+\s*:\s*/i, '');
-                    console.log("Cleaned up relayed message:", messageText);
-            }
-        
-            // For message routing, we use these rules:
-            // 1. If it's a direct message from a human user to me (my client), show in that user's chat
-            // 2. If it's a message from an agent with a different sender_name, show in sender_name's chat
-            // 3. If it's a response from an agent to my @mention, show in that agent's chat window
-            // 4. If it's a message from an agent without sender_name, show in that agent's chat
-                
-            // Note: in the JSON payload:
-            // - from_agent is the agent who sent the message
-            // - sender_name is the original human who triggered the conversation
             
-            // Message should appear in the sender's chat window, not in the from_agent's window
-            let chatWindowAgentId;
-
-            // Case 1 & 2: Message has sender_name - show in that person's chat window
-            if (message.sender_name && message.sender_name !== "Anonymous") {
-                chatWindowAgentId = message.sender_name;
-                console.log(`Message originally from ${message.sender_name}, will display in their chat window`);
-            }
-            // Case 3: No sender_name but has from_agent - this could be a response to our @mention
-            else if (message.from_agent) {
-                // If this is likely a response to our @mention (we are the current user), 
-                // show it in the agent's chat window so the conversation flows properly
-                chatWindowAgentId = message.from_agent;
-                console.log(`Message is from ${chatWindowAgentId}, will display in the agent's chat window`);
-            }
-            // If backend only sends sender_client_id use that
-            else if (message.sender_client_id) {
-                chatWindowAgentId = message.sender_client_id;
-            }
-            // Fallback: Default to current agent if we can't determine
-            else {
-                chatWindowAgentId = currentAgent.id;
-                console.log(`Cannot determine appropriate window, defaulting to current agent: ${chatWindowAgentId}`);
-            }
-
             // Update sender chat history with new message
             setChatMessages(prev => ({
                 ...prev,
@@ -209,7 +151,6 @@ export default function Chat() {
 
     // Check if this is a message to another agent (starts with @), if it is then target that agent id
     const isMentionMessage = newMessage.startsWith('@');
-    let mentionedAgent = '';
     let targetAgentId = '';
     let targetAgentIdNew = '';
 
@@ -218,7 +159,6 @@ export default function Chat() {
       // Extract the mentioned agent name from the message
       const mentionMatch = newMessage.match(/^@(\w+)/);
       if (mentionMatch && mentionMatch[1]) {
-          mentionedAgent = mentionMatch[1];
           targetAgentId = mentionMatch[1];
       }
     } else {
@@ -226,7 +166,6 @@ export default function Chat() {
     }  
 
     targetAgentIdNew = targetAgentId.replace(" - Sandbox", "");
-    console.log('targetAgentId: ',targetAgentIdNew)
 
     try {
       // First try to lookup the user's assigned agent using the /lookup endpoint and get the api_url
@@ -274,13 +213,18 @@ export default function Chat() {
         try {
           // const assignedServerUrl = "https://nandaisrad.com:6001"
           const targetUrl = `${assignedServerUrl}/api/send`;
-          const response = await sendMessage(targetUrl, newMessage, targetAgentIdNew);
+          const response = await sendMessage(targetUrl, newMessage, targetAgentId);
           console.log('Sent message')
           
           // Check the response
           if (response && response.response) {
             // Normalize API response into our message shape
-            const agentText = typeof response.response === 'string' ? response.response : JSON.stringify(response.response);
+            let agentText = typeof response.response === 'string' ? response.response : JSON.stringify(response.response);
+            
+            // Update the text based on message type
+            agentText = updateMessage(agentText, false, currentUserName)
+            
+            // Normalize the message
             const normalizedAgentMessage = {
                 id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 text: agentText,

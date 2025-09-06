@@ -35,20 +35,37 @@ export async function fetchAgents(registryListUrl) {
  * @returns {Promise<object>} - The response from the agent
  */
 export async function sendMessage(targetUrl, message, agentId) {
-    try {
-
-        // Format the message appropriately
-        let formattedMessage;
-
-        // Don't modify messages that already have @mentions
-        const hasExistingMention = message.startsWith('@');
+    
+    // Check for special commands
+    const isQueryCommand = message.startsWith('/query ') || message.startsWith('# ');
         
-        if (hasExistingMention) {
-            // For regular messages to other agents, apply @mentions if needed
-            formattedMessage = hasExistingMention ? message : (agentId ? `@${agentId} ${message}` : message);
+    // Don't modify messages that already have @mentions
+    const hasExistingMention = message.startsWith('@');
+    
+    // Check if this is a sandbox agent (personal AI assistant)
+    const isSandboxAgent = agentId && agentId.toLowerCase().includes('sandbox');
+    
+    // Format the message appropriately
+    let formattedMessage;
+    
+    if (isQueryCommand) {
+        // For query commands (/query or #), keep the format as is
+        // Normalize to /query format if it starts with #
+        if (message.startsWith('# ')) {
+            formattedMessage = '/query ' + message.substring(2);
         } else {
             formattedMessage = message;
         }
+    } else if (isSandboxAgent) {
+        // For sandbox agents (personal AI), don't add @mention prefix
+        // Send the message directly without modification
+        formattedMessage = message;
+    } else {
+        // For regular messages to other agents, apply @mentions if needed
+        formattedMessage = hasExistingMention ? message : (agentId ? `@${agentId} ${message}` : message);
+    }
+
+    try {
 
         console.log(`Sending formatted message to ${targetUrl}:`, formattedMessage);
         console.log(`Raw message: "${message}", agentId: ${agentId}, hasExistingMention: ${hasExistingMention}`);
