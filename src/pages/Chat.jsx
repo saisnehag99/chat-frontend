@@ -366,9 +366,9 @@ export default function Chat() {
                   <div className="agent-name">
                     {id}
                   </div>
-                  <div className="agent-url">
+                  {/* <div className="agent-url">
                     {url}
-                  </div>
+                  </div> */}
                 </li>
               ))}
             </ul>
