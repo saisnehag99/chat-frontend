@@ -204,13 +204,11 @@ export default function Chat() {
 
     try {
       // check the health of the agent
-      const healthCheckUrl = `${serverUrl}/api/health`;
+      const healthCheckUrl = `${assignedServerUrl}/api/health`;
       const health = await checkHealth(healthCheckUrl);
 
       if (health.status === 'ok') {
         console.log('Health check passed.')
-        //localStorage.setItem('server_url', serverUrl);
-        //console.log("Found and stored user's assigned server_url:", serverUrl);
         
         try {
           // const assignedServerUrl = "https://nandaisrad.com:6001"
