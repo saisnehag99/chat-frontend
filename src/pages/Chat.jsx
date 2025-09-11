@@ -24,7 +24,6 @@ export default function Chat() {
   useEffect(() => {
     async function loadAgents() {
       try {
-
         // Populate with fetched agents from the registry (excluding user's own agent)
         const data = await fetchAgents(clientsUrl);
         const agentsArrayOld = Object.entries(data);

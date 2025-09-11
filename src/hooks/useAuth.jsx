@@ -63,6 +63,8 @@ function useProvideAuth() {
     setUser(null);
     localStorage.removeItem('userProfile'); // Remove from localStorage
     if (window.google) google.accounts.id.disableAutoSelect();
+    // Redirect to login page
+    window.location.href = '/';
   };
 
   return { user, login, logout, loading };
