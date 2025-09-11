@@ -28,16 +28,47 @@ export async function fetchAgents(registryListUrl) {
 }
 
 /**
-     * Send a message to the specified agent endpoint URL
-     * @param {string} targetUrl - The full URL of the API endpoint (e.g., `${server_url}/api/send`)
-     * @param {string} message - The message text to send
-     * @param {string} agentId - Optional target agent ID (used for @mention format)
-     * @returns {Promise<object>} - The response from the agent
-     */
+ * Send a message to the specified agent endpoint URL
+ * @param {string} targetUrl - The full URL of the API endpoint (e.g., `${server_url}/api/send`)
+ * @param {string} message - The message text to send
+ * @param {string} agentId - Optional target agent ID (used for @mention format)
+ * @returns {Promise<object>} - The response from the agent
+ */
 export async function sendMessage(targetUrl, message, agentId) {
+    
+    // Check for special commands
+    const isQueryCommand = message.startsWith('/query ') || message.startsWith('# ');
+        
+    // Don't modify messages that already have @mentions
+    const hasExistingMention = message.startsWith('@');
+    
+    // Check if this is a sandbox agent (personal AI assistant)
+    const isSandboxAgent = agentId && agentId.toLowerCase().includes('sandbox');
+    
+    // Format the message appropriately
+    let formattedMessage;
+    
+    if (isQueryCommand) {
+        // For query commands (/query or #), keep the format as is
+        // Normalize to /query format if it starts with #
+        if (message.startsWith('# ')) {
+            formattedMessage = '/query ' + message.substring(2);
+        } else {
+            formattedMessage = message;
+        }
+    } else if (isSandboxAgent) {
+        // For sandbox agents (personal AI), don't add @mention prefix
+        // Send the message directly without modification
+        formattedMessage = message;
+    } else {
+        // For regular messages to other agents, apply @mentions if needed
+        formattedMessage = hasExistingMention ? message : (agentId ? `@${agentId} ${message}` : message);
+    }
+
     try {
-        console.log(`Sending message to ${targetUrl}:`, message);
-        console.log(`Raw message: "${message}", agentId: ${agentId}`);
+
+        console.log(`Sending formatted message to ${targetUrl}:`, formattedMessage);
+        console.log(`Raw message: "${message}", agentId: ${agentId}, hasExistingMention: ${hasExistingMention}`);
         
         // Get the user's name from localStorage
         let senderName = "Anonymous";
@@ -62,7 +93,7 @@ export async function sendMessage(targetUrl, message, agentId) {
         }
         
         const requestPayload = {
-            message: message,
+            message: formattedMessage,
             conversation_id: null,
             sender_name: senderName  // Include the sender's name in the request
         };
@@ -98,8 +129,8 @@ export async function sendMessage(targetUrl, message, agentId) {
             // Let's check if we get any additional polling data in the next few seconds that might contain the actual response
             console.log('Will poll for actual response from target agent');
         }
-        
         return data;
+
     } catch (error) {
         console.error('Error sending message:', error);
         throw error;
