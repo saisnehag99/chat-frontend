@@ -1,26 +1,106 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth.jsx';
 
 export default function Login() {
   const { user, login, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [showUsernameInput, setShowUsernameInput] = useState(false);
+  const [username, setUsername] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Check for URL parameters
+  const urlParams = new URLSearchParams(location.search);
+  const hasUrlParams = urlParams.toString().length > 0;
 
   useEffect(() => {
-    // If user is already authenticated, redirect to chat
-    if (user && !loading) {
+    // If user is already authenticated and no URL params, redirect to chat
+    if (user && !loading && !hasUrlParams) {
       navigate('/chat');
     }
-  }, [user, loading, navigate]);
+    // If user is authenticated and has URL params, show username input
+    else if (user && !loading && hasUrlParams) {
+      setShowUsernameInput(true);
+    }
+  }, [user, loading, navigate, hasUrlParams]);
 
-  // Don't render login form if user is already authenticated
-  if (user || loading) {
+  const handleUsernameSubmit = async (e) => {
+    e.preventDefault();
+    if (!username.trim()) return;
+    
+    setIsSubmitting(true);
+    
+    // Store username in localStorage or pass it along
+    localStorage.setItem('customUsername', username.trim());
+    
+    navigate(`/chat`);
+  };
+
+  // Show loading spinner while checking authentication
+  if (loading) {
     return (
       <div className="login-loading">
         <div className="loading-spinner">
           <div className="spinner"></div>
           <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show username input if user is authenticated and has URL params
+  if (user && showUsernameInput) {
+    return (
+      <div className="login-container">
+        {/* Background Elements */}
+        <div className="login-background">
+          <div className="gradient-orb orb-1"></div>
+          <div className="gradient-orb orb-2"></div>
+          <div className="gradient-orb orb-3"></div>
+        </div>
+
+        {/* Username Input Card */}
+        <div className="login-card">
+          <div className="login-header">
+            <div className="login-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <h1 className="login-title">Enter Your Username</h1>
+            <p className="login-subtitle">Choose a username to continue to the chat</p>
+          </div>
+
+          <div className="login-content">
+            <form onSubmit={handleUsernameSubmit} className="username-form">
+              <div className="input-group">
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  className="username-input"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+              <button
+                type="submit"
+                className="continue-button"
+                disabled={!username.trim() || isSubmitting}
+              >
+                {isSubmitting ? 'Continuing...' : 'Continue to Chat'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="login-footer">
+          <p>© 2025 NANDA Agentic Chat. All rights reserved.</p>
         </div>
       </div>
     );
