@@ -65,6 +65,8 @@ export async function sendMessage(targetUrl, message, agentId) {
         formattedMessage = hasExistingMention ? message : (agentId ? `@${agentId} ${message}` : message);
     }
 
+    console.log(`${isQueryCommand}, ${hasExistingMention}, ${isSandboxAgent}, ${formattedMessage}`);
+
     try {
 
         console.log(`Sending formatted message to ${targetUrl}:`, formattedMessage);
@@ -152,4 +154,84 @@ export async function checkHealth(healthCheckUrl) {
        console.error('Health check failed:', error);
        return { status: 'error', message: error.message };
    }
+}
+
+// Check user
+export async function checkUser(targetUrl, email) {
+    try {
+        const response = await fetch(targetUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+  
+        return await response.json();
+      } catch (error) {
+        console.error('Check user failed:', error);
+        return { status: 'error', message: error.message };
+      }
+}
+
+
+// Signup a user (for users without registered agents)
+export async function signupUser(targetUrl, email, username) {
+  try {
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, username }),
+    });
+
+    const data = await response.json().catch(() => ({})); // avoid crash on empty body
+
+    if (!response.ok) {
+      // surface backend error message if available
+      throw new Error(data.message || `Error: ${response.status}`);
+    }
+
+    return data; // { status, user, agent_url, api_url } on success
+
+  } catch (error) {
+    console.error("Signup failed:", error);
+    return { status: "error", message: error.message };
+  }
+}
+
+
+// Setup a user (for users with registered agents)
+export async function setupUser(targetUrl, email, username, agentId) {
+  console.log(`Setting up user with: ${targetUrl}, ${email}, ${username}, ${agentId}`);
+  try {
+    const response = await fetch(targetUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        username,
+        agent_id: agentId,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({})); // avoid crash on empty body
+
+    if (!response.ok) {
+      // surface backend error message if available
+      throw new Error(data.message || `Error: ${response.status}`);
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Setup user failed:", error);
+    return { status: "error", message: error.message };
+  }
 }

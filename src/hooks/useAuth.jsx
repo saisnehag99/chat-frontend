@@ -46,14 +46,6 @@ function useProvideAuth() {
       // Store the user data from the backend
       localStorage.setItem('user', JSON.stringify(payload))
 
-      // IMPORTANT: Store the api_url to prevent the app from calling /api/allocate again
-      if (data.api_url) {
-        localStorage.setItem('server_url', payload.api_url);
-        console.log("✅ Stored existing user's api_url:", payload.api_url);
-    } else {
-        console.warn("⚠️ No api_url returned for existing user, app will need to call /api/allocate");
-    }
-
     } catch (error) {
       console.error('Error decoding JWT:', error);
     }
@@ -61,6 +53,7 @@ function useProvideAuth() {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('user');
     localStorage.removeItem('userProfile'); // Remove from localStorage
     if (window.google) google.accounts.id.disableAutoSelect();
     // Redirect to login page

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { checkUser, signupUser, setupUser } from '../api/client.js';
 
 export default function Login() {
   const { user, login, loading } = useAuth();
@@ -13,27 +14,74 @@ export default function Login() {
 
   // Check for URL parameters
   const urlParams = new URLSearchParams(location.search);
+  console.log(`urlParams: ${urlParams}`);
   const hasUrlParams = urlParams.toString().length > 0;
 
   useEffect(() => {
-    // If user is already authenticated and no URL params, redirect to chat
-    if (user && !loading && !hasUrlParams) {
-      navigate('/chat');
+    async function checkUserExists() {
+      // User exists and authenticated
+      if (user && !loading) {
+        const data = await checkUser(
+          "https://chat.nanda-registry.com:6900/api/check-user",
+          user.email
+        );
+
+        if (data.exists) {
+          // Returning user → straight to chat
+          navigate("/chat");
+        } else {
+          // New user (regardless of URL params) → must pick username
+          setShowUsernameInput(true);
+        }
+      }
     }
-    // If user is authenticated and has URL params, show username input
-    else if (user && !loading && hasUrlParams) {
-      setShowUsernameInput(true);
-    }
-  }, [user, loading, navigate, hasUrlParams]);
+
+    checkUserExists();
+  }, [user, loading, navigate]);
 
   const handleUsernameSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim()) return;
     
     setIsSubmitting(true);
-    
-    // Store username in localStorage or pass it along
-    localStorage.setItem('customUsername', username.trim());
+
+    // For a user with registered agents, setup 
+    async function setup() {
+      console.log('Setting up user...');
+      const data = await setupUser(
+        "https://chat.nanda-registry.com:6900/api/setup",
+        user.email,
+        username.trim(),
+        urlParams.get('agentId') || null
+      );
+      console.log('Set up user with registered agents. Data:', data);
+    }
+
+    // For a user without regisered agents, sign them up
+    async function signup() {
+      console.log('Signing up new user...');
+      const data = await signupUser(
+        "https://chat.nanda-registry.com:6900/api/signup",
+        user.email,
+        username.trim()
+      );
+      console.log('Signed up new user. Data:', data);
+    }
+
+    // Test if actually signed up
+    async function checkUserExists() {
+      const data = await checkUser(
+        "https://chat.nanda-registry.com:6900/api/check-user",
+        user.email
+      );
+      console.log('Checked user existence after setup/signup. Data:', data);
+    }
+
+    if (user) {
+      if (hasUrlParams) await setup();
+      else await signup();
+      await checkUserExists();
+    }
     
     navigate(`/chat`);
   };

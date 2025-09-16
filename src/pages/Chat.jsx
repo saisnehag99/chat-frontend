@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { fetchAgents, sendMessage, checkHealth } from '../api/client.js';
+import { fetchAgents, sendMessage, checkHealth, checkUser } from '../api/client.js';
 
 export default function Chat() {
   const { user, logout } = useAuth();
@@ -11,14 +11,70 @@ export default function Chat() {
     return saved ? JSON.parse(saved) : {};
   }); // Object to store messages per agent
   const [newMessage, setNewMessage] = useState('');
+  const [currentUserName, setCurrentUserName] = useState("");
   const clientsUrl = 'https://chat.nanda-registry.com:6900/clients';
   let assignedServerUrl = null;
   let serverUrl = null;
+
+  const [avatarUrl, setAvatarUrl] = useState('/default-avatar.png');
+
+  useEffect(() => {
+    if (!user) return; // wait until user exists
+
+    const checkPicture = () => {
+      if (user.picture) {
+        const img = new Image();
+        img.src = user.picture;
+
+        img.onload = () => setAvatarUrl(user.picture);
+        img.onerror = () => setAvatarUrl('/default-avatar.png');
+
+        return true; // found picture, stop interval
+      }
+      return false; // picture not ready yet
+    };
+
+    // Try immediately
+    if (checkPicture()) return;
+
+    // Set up interval to check every 500ms
+    const interval = setInterval(() => {
+      if (checkPicture()) {
+        clearInterval(interval); // stop checking once found
+      }
+    }, 500);
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [user]);
+
 
   // Save chat messages to localStorage
   useEffect(() => {
     localStorage.setItem("chatMessages", JSON.stringify(chatMessages));
   }, [chatMessages]);
+
+  async function getUsername() {
+    const data = await checkUser(
+      "https://chat.nanda-registry.com:6900/api/check-user",
+      user.email
+    );
+    if (data.exists) {
+      return data.user.username;
+    } else {
+      return user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
+    }
+  }
+
+  useEffect(() => {
+    async function fetchUsername() {
+      const username = await getUsername();
+      console.log(`Setting current username to: ${username}`);
+      setCurrentUserName(username);
+    }
+    fetchUsername();
+  }, []);
+
 
   // Load agents from API
   useEffect(() => {
@@ -29,7 +85,8 @@ export default function Chat() {
         const agentsArrayOld = Object.entries(data);
               
         // Add personal sandbox agent (only for the logged-in user)
-        const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
+        // const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
+         
         agentsArrayOld.push([`${currentUserName} - Sandbox`, 'alive'])
         const sandboxName = `${currentUserName} - Sandbox`;
         console.log(`Creating personal sandbox agent: ${sandboxName}`);
@@ -57,8 +114,8 @@ export default function Chat() {
     }
 
     loadAgents();
-  }, [user?.username]); // Add user.username as dependency to re-sort when user changes
-  // TODO: is the above dependency necessary? could be if add change username feature
+  }, [currentUserName]); // Add user.username as dependency to re-sort when user changes
+  
 
   const pollForMessages = async () => {
     // Use the new /api/render endpoint
@@ -101,20 +158,25 @@ export default function Chat() {
     logout();
   };
 
+  const handleClearChat = () => {
+    if (selectedAgent) {
+      setChatMessages(prev => ({
+        ...prev,
+        [selectedAgent[0]]: []
+      }));
+    }
+  };
+
   const handleAgentSelect = (agent) => {
     setSelectedAgent(agent);
     // Don't clear messages - they're now stored per agent
   };
 
-  
-
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedAgent) return;
 
-    const agentId = selectedAgent[0] === `${user.name} - Sandbox`
-      ? user.username
-      : selectedAgent[0];
+    const agentId = selectedAgent[0]; 
     const message = {
       id: Date.now(),
       text: newMessage,
@@ -123,7 +185,6 @@ export default function Chat() {
     };
 
     // Set assigned server url
-    const currentUserName = user ? user.name.toLowerCase().replace(/\s+/g, '') : '';
     const apiBaseUrl = "https://chat.nanda-registry.com:6900";
     const lookupUrl = `${apiBaseUrl}/lookup/${currentUserName}`;
     const response = await fetch(lookupUrl, {
@@ -167,6 +228,8 @@ export default function Chat() {
     }  
 
     targetAgentIdNew = targetAgentId.replace(" - Sandbox", "");
+
+    console.log(`Inside handleSendMessage: ${isMentionMessage}, ${targetAgentId}, ${targetAgentIdNew}`);
 
     try {
       // First try to lookup the user's assigned agent using the /lookup endpoint and get the api_url
@@ -212,6 +275,7 @@ export default function Chat() {
         try {
           // const assignedServerUrl = "https://nandaisrad.com:6001"
           const targetUrl = `${assignedServerUrl}/api/send`;
+          console.log('Params for sendMessage:', { targetUrl, newMessage, targetAgentId });
           const response = await sendMessage(targetUrl, newMessage, targetAgentId);
           console.log('Sent message')
           
@@ -382,34 +446,39 @@ export default function Chat() {
         {/* User Profile Section - Top Left */}
         {user && (
           <div className="user-profile">
-            <img 
-              src={user.picture} 
+            {/* {!loaded && (
+              <div className="avatar-placeholder">
+                <img src="/default-avatar.png" alt="" className="user-avatar" />
+              </div>
+            )} */}
+            {/* {loaded && ( */}
+            <img
+              src={avatarUrl}
               alt={user.name}
               className="user-avatar"
             />
-            <span className="user-name">
-              {user.name}
-            </span>
+            {/* )} */}
+            <span className="user-name">{user.name}</span>
           </div>
         )}
 
-        {/* Logout Button */}
-        <button 
-          onClick={handleLogout}
-          className="logout-button"
-        >
-          Logout
-        </button>
-
-        {/* Reset Button */}
-        {/* <button 
-          onClick={() => {
-            setChatMessages({});
-          }}
-          className="reset-button"
-        >
-          Reset
-        </button> */}
+        {/* Button Container */}
+        <div className="button-container">
+          {selectedAgent && (
+            <button 
+              onClick={handleClearChat}
+              className="clear-chat-button"
+            >
+              Clear Chat
+            </button>
+          )}
+          <button 
+            onClick={handleLogout}
+            className="logout-button"
+          >
+            Logout
+          </button>
+        </div>
 
         {/* Chat Window */}
         <div className="chat-window">
