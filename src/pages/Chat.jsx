@@ -15,38 +15,7 @@ export default function Chat() {
   const clientsUrl = 'https://chat.nanda-registry.com:6900/clients';
   let assignedServerUrl = null;
   let serverUrl = null;
-
-  const [avatarUrl, setAvatarUrl] = useState('/default-avatar.png');
-
-  useEffect(() => {
-    if (!user) return; // wait until user exists
-
-    const checkPicture = () => {
-      if (user.picture) {
-        const img = new Image();
-        img.src = user.picture;
-
-        img.onload = () => setAvatarUrl(user.picture);
-        img.onerror = () => setAvatarUrl('/default-avatar.png');
-
-        return true; // found picture, stop interval
-      }
-      return false; // picture not ready yet
-    };
-
-    // Try immediately
-    if (checkPicture()) return;
-
-    // Set up interval to check every 500ms
-    const interval = setInterval(() => {
-      if (checkPicture()) {
-        clearInterval(interval); // stop checking once found
-      }
-    }, 500);
-
-    // Cleanup on unmount
-    return () => clearInterval(interval);
-  }, [user]);
+  const avatarUrl = user.picture;
 
 
   // Save chat messages to localStorage
@@ -446,18 +415,11 @@ export default function Chat() {
         {/* User Profile Section - Top Left */}
         {user && (
           <div className="user-profile">
-            {/* {!loaded && (
-              <div className="avatar-placeholder">
-                <img src="/default-avatar.png" alt="" className="user-avatar" />
-              </div>
-            )} */}
-            {/* {loaded && ( */}
             <img
               src={avatarUrl}
               alt={user.name}
               className="user-avatar"
             />
-            {/* )} */}
             <span className="user-name">{user.name}</span>
           </div>
         )}
