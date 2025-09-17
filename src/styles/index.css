@@ -603,64 +603,35 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 0;
   pointer-events: none;
   z-index: 0;
+  background: radial-gradient(circle at 10% 20%, rgba(29,78,216,0.28), transparent 18%),
+              radial-gradient(circle at 50% 40%, rgba(59,130,246,0.14), transparent 22%),
+              radial-gradient(circle at 85% 75%, rgba(59,130,246,0.16), transparent 14%),
+              linear-gradient(180deg, #020204 0%, #071028 60%, #0b1220 100%);
 }
 
-.gradient-orb {
+/* Small white dots overlay: subtle stars/dust */
+.login-background::after {
+  content: '';
   position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.6;
-  animation: float 6s ease-in-out infinite;
-}
-
-.orb-1 {
-  width: 300px;
-  height: 300px;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  top: 10%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.orb-2 {
-  width: 200px;
-  height: 200px;
-  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
-  top: 60%;
-  right: 15%;
-  animation-delay: 2s;
-}
-
-.orb-3 {
-  width: 150px;
-  height: 150px;
-  background: linear-gradient(135deg, #475569 0%, #334155 100%);
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-  }
+  inset: 0;
+  /* Sparse, subtle white dots (SVG data URI). Larger tile and fewer circles for a less uniform look */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='900' viewBox='0 0 1200 900'><g fill='%23ffffff'><circle cx='60' cy='80' r='1.8' opacity='0.95'/><circle cx='200' cy='40' r='1.4' opacity='0.8'/><circle cx='360' cy='150' r='1.6' opacity='0.85'/><circle cx='520' cy='70' r='1.2' opacity='0.7'/><circle cx='720' cy='200' r='2.0' opacity='0.95'/><circle cx='980' cy='120' r='1.4' opacity='0.8'/><circle cx='140' cy='320' r='1.2' opacity='0.7'/><circle cx='300' cy='420' r='1.6' opacity='0.85'/><circle cx='540' cy='360' r='1.3' opacity='0.75'/><circle cx='820' cy='380' r='1.8' opacity='0.9'/><circle cx='1040' cy='500' r='1.2' opacity='0.7'/><circle cx='200' cy='600' r='1.6' opacity='0.8'/></g></svg>");
+  background-repeat: repeat;
+  background-size: 1200px 900px; /* tile size */
+  opacity: 0.08; /* slightly more visible */
+  pointer-events: none;
+  mix-blend-mode: screen;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  padding: 48px;
-  max-width: 420px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 440px;
   width: 100%;
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 30px rgba(2, 6, 12, 0.7), 0 0 0 1px rgba(255,255,255,0.04);
   position: relative;
   z-index: 1;
   text-align: center;
@@ -686,24 +657,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .login-icon::before {
+  /* remove shimmer animation; keep subtle glossy overlay */
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-}
-
-.login-icon svg {
-  width: 48px;
-  height: 48px;
+  top: -40%;
+  left: -40%;
+  width: 180%;
+  height: 180%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  opacity: 0.9;
 }
 
 .login-title {
